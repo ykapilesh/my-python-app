@@ -1,5 +1,5 @@
 image:
-  repository: localhost:5000/my-python-app
+  repository: 192.168.122.1:5000/my-python-app
   tag: latest
 
 service:
