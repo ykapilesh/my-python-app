@@ -1,5 +1,7 @@
 from flask import Flask, request, Response
 from prometheus_client import Counter, Histogram, generate_latest
+import threading
+import requests
 import random
 import time
 
@@ -22,11 +24,9 @@ REQUEST_LATENCY = Histogram(
 def hello():
     start_time = time.time()
 
-    # Simulate processing time
     sleep_time = random.uniform(0.1, 1.0)
     time.sleep(sleep_time)
 
-    # Simulate random error
     if random.random() < 0.2:
         status_code = 500
         response = "Internal Server Error", 500
@@ -34,7 +34,6 @@ def hello():
         status_code = 200
         response = "Hello from my-python-app!"
 
-    # Observe metrics
     REQUESTS_TOTAL.labels(method=request.method, endpoint='/', http_status=status_code).inc()
     REQUEST_LATENCY.labels(endpoint='/').observe(time.time() - start_time)
 
@@ -43,6 +42,19 @@ def hello():
 @app.route('/metrics')
 def metrics():
     return Response(generate_latest(), mimetype='text/plain')
+
+def periodic_curl():
+    """Function that runs periodically to 'curl' the own app."""
+    while True:
+        try:
+            resp = requests.get("http://localhost:5000/")
+            print(f"Periodic call: status {resp.status_code}")
+        except Exception as e:
+            print(f"Periodic call failed: {e}")
+        time.sleep(10)  # run every 10 sec
+
+# Start background thread
+threading.Thread(target=periodic_curl, daemon=True).start()
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
