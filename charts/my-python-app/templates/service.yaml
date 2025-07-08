@@ -9,5 +9,8 @@ spec:
       targetPort: 5000
       protocol: TCP
       name: http
+      {{- if eq .Values.service.type "NodePort" }}
+      nodePort: {{ .Values.service.nodePort }}
+      {{- end }}
   selector:
     app: my-python-app
